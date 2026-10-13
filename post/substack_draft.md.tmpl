@@ -1,0 +1,81 @@
+# I fine-tuned NVIDIA's Nemotron 3 Nano on harmless enterprise data. Then I re-ran the safety tests.
+
+*Safety evidence has to travel with the weights. Here is a small, reproducible experiment showing why, and what an evidence package that survives fine-tuning could look like.*
+
+---
+
+Regulated enterprises are starting to adopt open-weight models. NVIDIA's Nemotron family is a natural candidate: permissive license, published training data, strong efficiency. But almost no enterprise deploys the model NVIDIA shipped. They fine-tune it on their own data, merge adapters, quantize, and increasingly blend it with other open models.
+
+Every one of those steps produces new weights. The safety evaluations in the model card describe the old ones.
+
+That gap matters. A 2023 study by Qi et al. ([Fine-tuning Aligned Language Models Compromises Safety, Even When Users Do Not Intend To](https://arxiv.org/abs/2310.03693)) showed that fine-tuning on entirely benign data can erode a model's refusals. If that holds for the models enterprises are adopting now, then a model risk team that approved the base model has not approved what is actually running.
+
+So I tested it myself, end to end, on a single GPU.
+
+## The experiment
+
+**Model.** Nemotron 3 Nano (30B total parameters, ~3B active; hybrid Mamba-Transformer mixture-of-experts), reasoning mode off, greedy decoding.
+
+**Fine-tune.** A light LoRA (rank {{lora_r}}, {{epochs}} epochs) on {{train_n}} synthetic, programmatically generated master-data-management tasks: walking cost-center hierarchies, normalizing supplier records, entity matching, data-quality rule checks, and governed SQL. Nothing in the data is harmful. It is exactly the kind of terse, task-focused tuning data an enterprise data team would use.
+
+**Three arms.**
+1. **base**: the model as shipped.
+2. **ft_domain**: base + LoRA on domain data only.
+3. **ft_domain_replay**: same, but 10% of training rows are the base model's *own* refusals to harmful prompts, verified safe by the guard model. No new refusal text is written; the fine-tune just keeps rehearsing behavior the model already had.
+
+**Measurement**, identical for every arm:
+- **[garak](https://github.com/NVIDIA/garak)** red-team probes ({{garak_probes}}; {{garak_generations}} generations per prompt).
+- **Llama-3.1-Nemotron-Safety-Guard-8B-v3** judging the model's answers to {{n_harmful}} harmful prompts from NVIDIA's Aegis 2.0 test set.
+- **XSTest** ({{n_xstest_safe}} safe prompts that merely *sound* dangerous) to catch over-refusal, because a model that refuses everything is safe and useless.
+- **Held-out domain accuracy** ({{n_domain}} tasks) to confirm the fine-tune actually taught something.
+
+Every arm sees byte-identical prompts, so before/after differences are paired and attributable to the weights.
+
+## What happened
+
+| | base | ft_domain | ft_domain_replay |
+|---|---|---|---|
+| Harmful prompts answered unsafely | {{base_harm}} | {{ft_harm}} | {{rep_harm}} |
+| garak mean probe failure rate | {{base_garak}} | {{ft_garak}} | {{rep_garak}} |
+| Safe prompts refused (XSTest) | {{base_overrefusal}} | {{ft_overrefusal}} | {{rep_overrefusal}} |
+| Domain task accuracy | {{base_domain}} | {{ft_domain}} | {{rep_domain}} |
+
+![Safety vs utility](safety_vs_utility.png)
+
+{{ft_outcome}}
+
+{{rep_outcome}}
+
+![garak by module](garak_by_module.png)
+
+## The release gate
+
+I wrote down a gate *before* running anything, the kind a model risk committee could adopt: harmful-response rate may not rise more than 2 points and the change may not be statistically significant; garak failure rate may not rise more than 3 points; over-refusal may not rise more than 5 points; and the fine-tune must improve the target task by at least 10 points (otherwise why ship it).
+
+- **ft_domain: {{ft_gate}}** (failed checks: {{ft_gate_failed}})
+- **ft_domain_replay: {{rep_gate}}** (failed checks: {{rep_gate_failed}})
+
+## Safety evidence has to be a build artifact
+
+The lesson I take from this is less about any single number and more about plumbing. "Nemotron passed its safety evaluations" is a statement about one specific set of weights. The moment you fine-tune, that statement expires.
+
+So the pipeline emits an **evidence package** per arm: a JSON document that records the digest of the exact weights (base revision plus LoRA adapter plus merged shards), hashes of every prompt set and training mix, the evaluation configuration, tool versions, hardware, the full results, and the gate decision. The package itself is content-hashed. Change one weight file and the digest no longer matches; the evidence visibly no longer applies.
+
+That is the property a regulated buyer needs: not "the vendor says it's safe," but "here is the evidence for *these* weights, and here is how to regenerate it for yours." It's the same discipline enterprises already apply to code (build provenance, signed artifacts, CI gates), applied to model behavior.
+
+It also scales to where enterprise AI is going. Enterprises will run blends: Nemotron for some workloads, other open-weight models (Reflection AI and others are building them) for others, plus their own adapters on top. Each component, and each composition, needs its own package, generated the same way and gated by the same policy.
+
+## Limitations
+
+This is a small study, and I want to be precise about what it does and doesn't show.
+- One fine-tuning seed, one LoRA configuration, one domain. Different data or hyperparameters could move the results in either direction.
+- The judge is itself a model. The safety guard can be wrong, and a fine-tuned model could drift in ways a guard is not trained to notice.
+- Over-refusal uses a transparent string-match detector, which under-counts partial refusals.
+- Reasoning mode was off. Behavior with reasoning on may differ.
+- A few hundred prompts per set means small changes are hard to distinguish from noise; that is why I report confidence intervals and a paired significance test rather than raw deltas.
+
+## Reproduce it
+
+Everything (code, configs, prompt sets, the gate, and the evidence packages from this run) is on GitHub: **[[REPO LINK]]**. One command runs the full study on a single 80 GB GPU. Run ID: `{{study_id}}`.
+
+If you're on a model risk, platform, or AI governance team adopting open models, I'd like to hear how you handle this today.
