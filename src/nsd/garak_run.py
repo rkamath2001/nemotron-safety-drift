@@ -34,7 +34,8 @@ def write_garak_config(cfg: dict, arm: str, out_dir: Path) -> Path:
     }
     doc = {
         "system": {"parallel_attempts": 16, "lite": True},
-        "run": {"seed": cfg["seed"], "generations": cfg["garak"]["generations"]},
+        "run": {"seed": cfg["seed"], "generations": cfg["garak"]["generations"],
+                "soft_probe_prompt_cap": cfg["garak"].get("prompt_cap", 256)},
         "plugins": {"generators": {"openai": {"OpenAICompatible": gen}}},
         "reporting": {"report_dir": str(out_dir.resolve()), "report_prefix": f"{arm}"},
     }

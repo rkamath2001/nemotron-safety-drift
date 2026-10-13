@@ -86,6 +86,10 @@ def build(cfg: dict, hash_merged: bool) -> list[Path]:
         "hardware": _gpu(),
         "inputs_sha256": inputs,
         "evaluation": {"guard": f"{cfg['guard']['adapter_hf_id']} on {cfg['guard']['base_hf_id']}",
+                       "guard_mode": cfg["guard"].get("mode", "local"),
+                       "guard_calibration": (json.loads((p["results"] / "guard_calibration.json").read_text())
+                                             if (p["results"] / "guard_calibration.json").exists() else None),
+                       "target_backend": cfg["target"].get("backend", "vllm"),
                        "garak_probes": cfg["garak"]["probes"], "garak_generations": cfg["garak"]["generations"],
                        "decoding": cfg["generation"], "chat_template_kwargs": cfg["target"].get("chat_template_kwargs")},
         "gate_policy": cfg["gate"],

@@ -9,7 +9,7 @@ export PYTHONPATH="$PWD/src${PYTHONPATH:+:$PYTHONPATH}"
 [[ -d .venv-serve ]] && export PATH="$PWD/.venv-serve/bin:$PATH"
 TRAIN_PY="${TRAIN_PY:-$PWD/.venv-train/bin/python}"
 export GARAK_PYTHON="${GARAK_PYTHON:-$PWD/.venv-garak/bin/python}"
-trap 'scripts/serve.sh stop >/dev/null 2>&1 || true' EXIT
+trap 'bash scripts/serve.sh stop >/dev/null 2>&1 || true' EXIT
 
 RUN=$(python -c "from nsd import config;print(config.paths(config.load())['root'])")
 BASE_ID=$(python -c "from nsd import config;print(config.load()['target']['hf_id'])")
@@ -23,15 +23,15 @@ s_data() {
   python -m nsd.eval_sets
 }
 s_base() {
-  scripts/serve.sh target "$BASE_ID"
+  bash scripts/serve.sh target "$BASE_ID"
   python -m nsd.generate --arm base --sets harmful xstest domain replay
-  python -m nsd.garak_run --arm base
-  scripts/serve.sh stop
+  [[ -n "${NSD_SKIP_GARAK:-}" ]] || python -m nsd.garak_run --arm base
+  bash scripts/serve.sh stop
 }
 s_judge_base() {
-  scripts/serve.sh guard
+  bash scripts/serve.sh guard
   python -m nsd.judge --arms base --sets harmful xstest replay
-  scripts/serve.sh stop
+  bash scripts/serve.sh stop
 }
 s_finetune() {
   for a in $ARMS; do
@@ -43,16 +43,16 @@ s_finetune() {
 }
 s_eval_arms() {
   for a in $ARMS; do
-    scripts/serve.sh target "$RUN/models/$a/merged"
+    bash scripts/serve.sh target "$RUN/models/$a/merged"
     python -m nsd.generate --arm "$a" --sets harmful xstest domain
-    python -m nsd.garak_run --arm "$a"
-    scripts/serve.sh stop
+    [[ -n "${NSD_SKIP_GARAK:-}" ]] || python -m nsd.garak_run --arm "$a"
+    bash scripts/serve.sh stop
   done
 }
 s_judge_arms() {
-  scripts/serve.sh guard
+  bash scripts/serve.sh guard
   python -m nsd.judge --arms $ARMS --sets harmful xstest
-  scripts/serve.sh stop
+  bash scripts/serve.sh stop
 }
 s_report() {
   python -m nsd.analyze

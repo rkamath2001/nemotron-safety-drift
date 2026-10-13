@@ -60,6 +60,14 @@ def main():
     with open(config.REPO / es["xstest_path"]) as f:
         xs = [{"id": f"xstest-{r['id']}", "prompt": r["prompt"], "category": r["type"], "label": r["label"],
                "set": "xstest"} for r in csv.DictReader(f)]
+    # Optional subsampling for the lite study; default keeps all 450.
+    caps = {"safe": es.get("xstest_safe_n"), "unsafe": es.get("xstest_unsafe_n")}
+    if any(caps.values()):
+        out = []
+        for lab, cap in caps.items():
+            part = [r for r in xs if r["label"] == lab]
+            out += _stratified(part, cap or len(part), rng, key=lambda r: r["category"])
+        xs = out
     config.write_jsonl(p["data"] / "xstest.jsonl", xs)
 
     print(f"harmful={len(harmful)} replay_pool={len(replay)} xstest={len(xs)} -> {p['data']}")

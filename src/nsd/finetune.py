@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import random
 
 from . import config
@@ -28,7 +29,12 @@ def build_mix(cfg: dict, arm: str) -> list[dict]:
         keep = [j for j in config.read_jsonl(judged) if j["response_unsafe"] is False and j["refusal"]]
         need = round(len(rows) * frac / (1 - frac))
         if len(keep) < need:
-            print(f"warning: only {len(keep)} guard-verified refusals available, wanted {need}")
+            msg = (f"only {len(keep)} guard-verified refusals available for {need} replay rows; "
+                   f"raise eval_sets.replay_pool_n")
+            # Too few means the mitigation arm silently becomes the plain fine-tune: stop rather than mislead.
+            if len(keep) < need / 2 and not os.environ.get("NSD_ALLOW_SHORT_REPLAY"):
+                raise SystemExit(msg)
+            print("warning:", msg)
         rng.shuffle(keep)
         rows += [{"id": k["id"], "source": "safety_replay",
                   "messages": [{"role": "user", "content": k["prompt"]},
@@ -66,7 +72,11 @@ def train(cfg: dict, arm: str, rows: list[dict]) -> None:
     tok = AutoTokenizer.from_pretrained(t["hf_id"], trust_remote_code=True)
     if tok.pad_token is None:
         tok.pad_token = tok.eos_token
-    model = AutoModelForCausalLM.from_pretrained(t["hf_id"], torch_dtype=torch.bfloat16,
+    cuda = torch.cuda.is_available()
+    bf16 = cuda and torch.cuda.is_bf16_supported()  # False on T4: fp16 weights + fp32 LoRA params instead
+    fp16 = cuda and not bf16
+    dtype = torch.bfloat16 if bf16 else (torch.float16 if fp16 else torch.float32)
+    model = AutoModelForCausalLM.from_pretrained(t["hf_id"], torch_dtype=dtype,
                                                  trust_remote_code=True, device_map="auto")
     model.config.use_cache = False
 
@@ -80,6 +90,11 @@ def train(cfg: dict, arm: str, rows: list[dict]) -> None:
     lcfg = LoraConfig(r=ft["lora"]["r"], lora_alpha=ft["lora"]["alpha"], lora_dropout=ft["lora"]["dropout"],
                       target_modules=targets, bias="none", task_type="CAUSAL_LM")
     model = get_peft_model(model, lcfg)
+    if fp16:  # fp16 AMP needs fp32 master copies of the trainable (LoRA) weights
+        for prm in model.parameters():
+            if prm.requires_grad:
+                prm.data = prm.data.float()
+    model.enable_input_require_grads()
     model.print_trainable_parameters()
 
     kw = t.get("chat_template_kwargs", {})
@@ -93,10 +108,13 @@ def train(cfg: dict, arm: str, rows: list[dict]) -> None:
             return feats[i]
 
     out = p["models"] / arm
+    import math
+    total_steps = math.ceil(len(feats) / (ft["per_device_batch"] * ft["grad_accum"])) * ft["epochs"]
+    warmup_steps = max(1, int(ft["warmup_ratio"] * total_steps))  # warmup_ratio was removed in transformers 5
     args = TrainingArguments(
         output_dir=str(out / "ckpt"), num_train_epochs=ft["epochs"], learning_rate=ft["lr"],
         per_device_train_batch_size=ft["per_device_batch"], gradient_accumulation_steps=ft["grad_accum"],
-        warmup_ratio=ft["warmup_ratio"], lr_scheduler_type="cosine", bf16=True, logging_steps=10,
+        warmup_steps=warmup_steps, lr_scheduler_type="cosine", bf16=bf16, fp16=fp16, logging_steps=10,
         save_strategy="no", report_to=[], gradient_checkpointing=True,
         gradient_checkpointing_kwargs={"use_reentrant": False}, seed=cfg["seed"], data_seed=cfg["seed"])
     trainer = Trainer(model=model, args=args, train_dataset=DS(),

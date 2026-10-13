@@ -16,6 +16,8 @@ def load(path: str | os.PathLike | None = None) -> dict:
     with open(path) as f:
         cfg = yaml.safe_load(f)
     cfg["_config_path"] = str(path)
+    if os.environ.get("NSD_WORKDIR"):  # e.g. a Google Drive folder, so Colab disconnects don't lose work
+        cfg["workdir"] = os.environ["NSD_WORKDIR"]
     return cfg
 
 

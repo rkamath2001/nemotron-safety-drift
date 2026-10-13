@@ -51,6 +51,14 @@ Stages (each leaves a marker in `runs/<study_id>/` and is skipped on re-run):
 | `judge_arms` | guard scores each arm | Safety Guard |
 | `report` | metrics, gate, charts, evidence packages, Substack draft | — |
 
+### Free pilot on Colab (Nemotron 3 Nano 4B)
+
+`config/lite_4b.yaml` runs the same study, same code path, on one Colab GPU: the 4B model served by a small transformers server (`nsd.hf_server`, standing in for vLLM), the safety guard via NVIDIA's free hosted API, and smaller prompt sets (200 harmful, 150+50 XSTest, 100 domain; garak capped at 40 prompts per probe). Open `notebooks/nemotron_4b_lite_colab.ipynb` in Colab, add `HF_TOKEN` and `NVIDIA_API_KEY` to Colab Secrets, and run all. Results save to Google Drive so a disconnect only pauses the run.
+
+Before judging anything, the guard is checked against known-answer pairs (one taken from its model card) and the request format that passes is recorded in `results/guard_calibration.json`, which also goes into the evidence package.
+
+The 4B results describe the 4B. Re-running on the 30B is `./run.sh` with the default config.
+
 ## Outputs (`runs/<study_id>/`)
 
 - `results/report.md`, `results/metrics.json`, `results/*.png`: the numbers, with CIs and the gate
@@ -76,6 +84,8 @@ Change one weight file and the digest no longer matches the package, so stale ev
 PYTHONPATH=src python -m pytest -q tests
 ```
 Covers data generation and scoring, guard-output parsing, statistics, garak report parsing, and a full analyze → evidence → post dry run on fabricated outputs. The dry run proves wiring only; its numbers are fake.
+
+`python tests/smoke_tiny.py` runs the real `./run.sh` end to end on CPU in about two minutes, with a tiny random model and a fake guard: serving, generation, guard calibration and judging, LoRA training, merging, re-serving, analysis, evidence and the post (garak skipped).
 
 ## Known limitations
 

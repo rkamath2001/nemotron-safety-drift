@@ -26,15 +26,19 @@ def main():
     adapter = p["models"] / a.arm / "adapter"
     out = p["models"] / a.arm / "merged"
 
-    base = AutoModelForCausalLM.from_pretrained(hf_id, torch_dtype=torch.bfloat16, trust_remote_code=True,
+    dtype = torch.bfloat16 if torch.cuda.is_available() and torch.cuda.is_bf16_supported() else torch.float16
+    base = AutoModelForCausalLM.from_pretrained(hf_id, torch_dtype=dtype, trust_remote_code=True,
                                                 device_map="auto")
     merged = PeftModel.from_pretrained(base, adapter).merge_and_unload()
     merged.save_pretrained(out, safe_serialization=True, max_shard_size="5GB")
     AutoTokenizer.from_pretrained(hf_id, trust_remote_code=True).save_pretrained(out)
     # Carry the base repo's remote-code files and chat template so vLLM loads the merged model identically.
-    snap = Path(snapshot_download(hf_id, allow_patterns=["*.py", "*.jinja", "generation_config.json"]))
+    snap = Path(hf_id) if Path(hf_id).is_dir() else Path(
+        snapshot_download(hf_id, allow_patterns=["*.py", "*.jinja", "generation_config.json"]))
+    # Copy ONLY code/template files: the snapshot dir may also hold the base weights, which must not
+    # overwrite the merged shards.
     for f in snap.iterdir():
-        if f.is_file():
+        if f.is_file() and (f.suffix in {".py", ".jinja"} or f.name == "generation_config.json"):
             shutil.copy2(f, out / f.name)
     print(f"[{a.arm}] merged model -> {out}")
 
