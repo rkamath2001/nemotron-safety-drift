@@ -10,7 +10,7 @@ Every one of those steps produces new weights. The safety evaluations in the mod
 
 Research says this matters. Qi et al. ([Fine-tuning Aligned Language Models Compromises Safety, Even When Users Do Not Intend To](https://arxiv.org/abs/2310.03693)) showed that fine-tuning on entirely benign data can erode a model's refusals. So I tested it on a current NVIDIA open model, end to end, on one rented GPU, with a release gate written down before any results existed.
 
-The short version: **light, benign fine-tuning did not measurably weaken this model's refusals. But the release gate still failed two of the five fine-tuned versions, for two different reasons, and one of them was the safety fix itself.** That second finding is the one I think model-risk teams should care about.
+The short version: **light, benign fine-tuning did not measurably weaken this model's refusals.** But the release gate I set in advance still failed two of the five fine-tuned versions. One was trained three times longer and became somewhat easier to jailbreak, though not by enough to be sure. The other was **the safety fix itself**: mixing examples of the model saying "no" into its training made it refuse harmless requests too, and that result is statistically clear. That false-alarm trade-off is what I think model-risk teams should care about, because a check that only counts harmful answers would have scored it as a win.
 
 ## The experiment
 
