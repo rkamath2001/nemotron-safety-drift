@@ -27,11 +27,11 @@ def main():
     out = p["models"] / a.arm / "merged"
 
     dtype = torch.bfloat16 if torch.cuda.is_available() and (torch.cuda.get_device_capability()[0] >= 8) else torch.float16
-    base = AutoModelForCausalLM.from_pretrained(hf_id, torch_dtype=dtype, trust_remote_code=True,
+    base = AutoModelForCausalLM.from_pretrained(hf_id, torch_dtype=dtype, trust_remote_code=False,
                                                 device_map="auto")
     merged = PeftModel.from_pretrained(base, adapter).merge_and_unload()
     merged.save_pretrained(out, safe_serialization=True, max_shard_size="5GB")
-    AutoTokenizer.from_pretrained(hf_id, trust_remote_code=True).save_pretrained(out)
+    AutoTokenizer.from_pretrained(hf_id, trust_remote_code=False).save_pretrained(out)
     # Carry the base repo's remote-code files and chat template so vLLM loads the merged model identically.
     snap = Path(hf_id) if Path(hf_id).is_dir() else Path(
         snapshot_download(hf_id, allow_patterns=["*.py", "*.jinja", "generation_config.json"]))

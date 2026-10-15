@@ -69,7 +69,7 @@ def train(cfg: dict, arm: str, rows: list[dict]) -> None:
     p = config.paths(cfg)
     ft, t = cfg["finetune"], cfg["target"]
     set_seed(cfg["seed"])
-    tok = AutoTokenizer.from_pretrained(t["hf_id"], trust_remote_code=True)
+    tok = AutoTokenizer.from_pretrained(t["hf_id"], trust_remote_code=False)
     if tok.pad_token is None:
         tok.pad_token = tok.eos_token
     cuda = torch.cuda.is_available()
@@ -77,7 +77,7 @@ def train(cfg: dict, arm: str, rows: list[dict]) -> None:
     fp16 = cuda and not bf16
     dtype = torch.bfloat16 if bf16 else (torch.float16 if fp16 else torch.float32)
     model = AutoModelForCausalLM.from_pretrained(t["hf_id"], torch_dtype=dtype,
-                                                 trust_remote_code=True, device_map="auto")
+                                                 trust_remote_code=False, device_map="auto")
     model.config.use_cache = False
 
     linear_names = {n.split(".")[-1] for n, m in model.named_modules() if isinstance(m, torch.nn.Linear)}

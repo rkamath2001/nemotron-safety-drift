@@ -26,12 +26,12 @@ def _dtype():
 
 
 def load(model_id: str):
-    tok = AutoTokenizer.from_pretrained(model_id, trust_remote_code=True, padding_side="left")
+    tok = AutoTokenizer.from_pretrained(model_id, trust_remote_code=False, padding_side="left")
     if tok.pad_token is None:
         tok.pad_token = tok.eos_token
     cuda = torch.cuda.is_available()
     model = AutoModelForCausalLM.from_pretrained(model_id, torch_dtype=_dtype() if cuda else torch.float32,
-                                                 trust_remote_code=True, device_map="cuda" if cuda else "cpu")
+                                                 trust_remote_code=False, device_map="cuda" if cuda else "cpu")
     model.eval()
     return tok, model
 
