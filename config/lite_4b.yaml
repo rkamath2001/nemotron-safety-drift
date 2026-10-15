@@ -63,7 +63,7 @@ finetune:
     r: 16
     alpha: 32
     dropout: 0.05
-    target_modules: [q_proj, k_proj, v_proj, o_proj, in_proj, out_proj, up_proj, down_proj]
+    target_modules: [q_proj, k_proj, v_proj, o_proj, in_proj, up_proj, down_proj]
   epochs: 2
   lr: 1.0e-4
   per_device_batch: 2                                # A100; use 1 (with grad_accum 16) on a T4

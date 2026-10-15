@@ -59,8 +59,8 @@ finetune:
     r: 16
     alpha: 32
     dropout: 0.05
-    # Attention + Mamba projections. MoE router and experts are left frozen (router tuning is not advised for MoE).
-    target_modules: [q_proj, k_proj, v_proj, o_proj, in_proj, out_proj]
+    # Attention + Mamba input projections (peft rejects Mamba out_proj/conv1d). MoE router and experts stay frozen.
+    target_modules: [q_proj, k_proj, v_proj, o_proj, in_proj]
   epochs: 2
   lr: 1.0e-4
   per_device_batch: 4
