@@ -120,7 +120,7 @@ The judge is NVIDIA's own safety guard model. I checked it against known answers
 
 Code, configs, the pre-registered gate, and this run's report are on GitHub: **[github.com/rkamath2001/nemotron-safety-drift](https://github.com/rkamath2001/nemotron-safety-drift)**. The Colab notebook runs the whole 4B study on one Colab A100 overnight, using NVIDIA's hosted API for the guard model. Run ID: `nemotron3-nano-4b-lora-drift-lite-v2`.
 
-## What open-model providers could build
+## For model providers
 
 This was one small run on one model, so the evidence is narrow. Where it is clear, it points to four things open-model providers could build. Each rests on a statistically significant result in this study, or on a weakness the study exposed in my own method. NVIDIA and others may already be working on some of them.
 
