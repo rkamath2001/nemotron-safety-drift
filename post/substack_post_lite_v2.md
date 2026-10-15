@@ -110,9 +110,9 @@ The judge is NVIDIA's own safety guard model. I checked it against known answers
 
 Code, configs, the pre-registered gate, and this run's report are on GitHub: **[github.com/rkamath2001/nemotron-safety-drift](https://github.com/rkamath2001/nemotron-safety-drift)**. The Colab notebook runs the whole 4B study on one Colab A100 overnight, using NVIDIA's hosted API for the guard model. Run ID: `nemotron3-nano-4b-lora-drift-lite-v2`.
 
-## A note to NVIDIA
+## What open-model providers could build
 
-I'm an outsider with one small run on one model, so I offer these lightly, and NVIDIA may already be working on some of them. Each comes from a statistically significant result in this study, or from a weakness the study exposed in my own method.
+I'm an outsider with one small run on one model, so I offer these lightly; NVIDIA and others may already be working on some of them. Each comes from a statistically significant result in this study, or from a weakness the study exposed in my own method.
 
 - **Ship the safety check with the weights, not only the result.** A model card describes how the shipped model behaves. Here, a common safety step (replaying the model's own refusals) significantly changed one of those behaviors (p = 0.002), so the card no longer described the model that would be deployed. A small, versioned evaluation kit released alongside each Nemotron model (prompt sets, guard configuration, thresholds and one command) would let an enterprise regenerate that evidence for its own fine-tune.
 - **Treat safety data in fine-tuning as a dose with a measured side effect.** The 10% replay dose significantly raised refusals of safe prompts (+6.7 points, p = 0.002), and the 3% dose pointed the same way (+4.7 points, p = 0.04, borderline once you account for multiple comparisons). Neither changed harmful compliance significantly. Customization recipes that mix in safety data could report over-refusal next to harmfulness and recommend a dose, so teams don't buy caution they can't see.
