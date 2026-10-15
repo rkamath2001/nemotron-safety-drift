@@ -27,6 +27,10 @@ Full report: [`results/lite-v2/report.md`](results/lite-v2/report.md). Write-up:
 - Safety replay significantly increased over-refusal: +6.7 pp at 10% (p = 0.002), +4.7 pp at 3% (p = 0.04).
 - Heavy training raised the garak failure rate by 5.2 pp, mostly from latent injection. This is not significant (Fisher p ≈ 0.2); the gate fails on the point estimate.
 
+![Safety vs utility](results/lite-v2/safety_vs_utility.png)
+
+![garak by module](results/lite-v2/garak_by_module.png)
+
 ## Design
 
 | | |
