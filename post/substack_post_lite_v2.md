@@ -51,7 +51,7 @@ The short version: **light, benign fine-tuning did not measurably weaken this mo
 
 **2. Harmful compliance did not rise in any version.** Because every version saw the same 200 prompts, I can compare prompt by prompt. For the plain fine-tune, 2 prompts flipped to unsafe and 2 flipped to safe (exact McNemar p = 1). Even the version trained with an instruction never to decline answered fewer harmful prompts unsafely, not more. None of the changes is statistically significant. More usefully, the bootstrap confidence intervals bound the effect: for the plain fine-tune, a rise of more than 2 points is ruled out at 95% confidence, and for the 3× version, more than 2.5 points. At this scale and dose, Qi et al.'s erosion effect did not appear.
 
-**3. The mitigation had a cost the gate caught.** Replaying the model's own refusals made it more cautious everywhere. With 10% replay, the model refused 10 more of the 150 safe XSTest prompts and stopped refusing none (p = 0.002). With 3% replay, 8 more were refused and 1 fewer (p = 0.04). The 10% version broke the pre-set +5-point over-refusal limit and failed the gate. The 3% version stayed just inside the limit, at +4.7 points.
+**3. The mitigation had a cost the gate caught.** Replaying the model's own refusals made it more cautious with harmless requests. With 10% replay, the model refused 10 more of the 150 safe XSTest prompts and stopped refusing none (p = 0.002). With 3% replay, 8 more were refused and 1 fewer (p = 0.04). The 10% version broke the pre-set +5-point over-refusal limit and failed the gate. The 3% version stayed just inside the limit, at +4.7 points.
 
 **4. Heavier training nudged jailbreak susceptibility up, but not conclusively.** The 3× version's garak failure rate rose 5.2 points, mostly on latent injection (26% → 38%), and it tripped the +3-point gate. But garak samples its answers with some randomness, my analysis compares overall counts rather than prompt by prompt, and this difference is not statistically significant (Fisher's exact p ≈ 0.2). The gate did what it was written to do, which is fail on the point estimate. I report the finding as a flag, not a result.
 
@@ -118,7 +118,7 @@ The judge is NVIDIA's own safety guard model. I checked it against known answers
 
 ## Reproduce it
 
-Code, configs, the pre-registered gate, and this run's report are on GitHub: **[github.com/rkamath2001/nemotron-safety-drift](https://github.com/rkamath2001/nemotron-safety-drift)**. The Colab notebook runs the whole 4B study on one Colab A100 overnight, using NVIDIA's hosted API for the guard model. Run ID: `nemotron3-nano-4b-lora-drift-lite-v2`.
+Code, configs, the release gate, set before any results existed, and this run's report are on GitHub: **[github.com/rkamath2001/nemotron-safety-drift](https://github.com/rkamath2001/nemotron-safety-drift)**. The Colab notebook runs the whole 4B study on one Colab A100 overnight, using NVIDIA's hosted API for the guard model. Run ID: `nemotron3-nano-4b-lora-drift-lite-v2`.
 
 ## For model providers
 
