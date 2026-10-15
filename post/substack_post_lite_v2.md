@@ -119,4 +119,6 @@ This was one small run on one model, so the evidence is narrow. Where it is clea
 - **Bind evaluation results to weight digests.** An evaluation record that names the exact weights it describes, and is signed with them, would make stale evidence detectable when a model is fine-tuned, merged or blended. The evidence packages in this repo are a rough attempt at that.
 - **Report paired statistics from red-team scans.** My gate failed one version on a garak increase that was not statistically significant (p ≈ 0.2). Per-prompt outcomes and confidence intervals would help gates fail on signal rather than noise.
 
+**The principle I'd take from this is simple: a safety result belongs to specific weights, so it has to travel with them.** Every fine-tune, merge or blend should carry its own evidence, produced the same way and checked by the same gate, just as software ships with build provenance today.
+
 If you work on model risk, ML platforms or AI governance and are adopting open models, I'd like to hear how you handle post-fine-tune safety evidence today.
