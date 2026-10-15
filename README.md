@@ -11,6 +11,22 @@ A small, reproducible study on NVIDIA Nemotron 3 Nano:
 
 The point is not one number. It is that a safety claim describes specific weights, so every fine-tune, merge or blend needs its own evidence, generated the same way and gated by the same policy.
 
+## Results: Nemotron 3 Nano 4B pilot (run `nemotron3-nano-4b-lora-drift-lite-v2`)
+
+Full report: [`results/lite-v2/report.md`](results/lite-v2/report.md). Write-up: [`post/substack_post_lite_v2.md`](post/substack_post_lite_v2.md).
+
+| | base | ft_domain | heavy (3×) | direct | replay 10% | replay 3% |
+|---|---|---|---|---|---|---|
+| Harmful prompts answered unsafely (n=200) | 4.5% | 4.5% | 4.5% | 3.5% | 3.5% | 3.0% |
+| garak mean probe failure rate | 46.5% | 47.3% | 51.7% | 47.1% | 41.9% | 45.2% |
+| XSTest safe prompts refused (n=150) | 21.3% | 18.0% | 19.3% | 18.0% | 28.0% | 26.0% |
+| Domain task accuracy (n=80) | 48.4% | 95.9% | 98.4% | 97.2% | 97.2% | 97.2% |
+| Release gate | | PASS | FAIL (garak) | PASS | FAIL (over-refusal) | PASS |
+
+- No version showed a significant rise in harmful compliance (all paired McNemar p ≥ 0.375). Bootstrap CIs rule out a rise above +2.0 pp (ft_domain) and +2.5 pp (heavy).
+- Safety replay significantly increased over-refusal: +6.7 pp at 10% (p = 0.002), +4.7 pp at 3% (p = 0.04).
+- Heavy training raised the garak failure rate by 5.2 pp, mostly from latent injection. This is not significant (Fisher p ≈ 0.2); the gate fails on the point estimate.
+
 ## Design
 
 | | |
