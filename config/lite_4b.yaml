@@ -1,7 +1,7 @@
 # Lite pilot: same study, same code path, sized for a single Colab GPU (T4/L4/A100) and a free hosted guard.
 # Differences from study.yaml are marked LITE. Use with: NSD_CONFIG=config/lite_4b.yaml ./run.sh
 
-study_id: nemotron3-nano-4b-lora-drift-lite-v1
+study_id: nemotron3-nano-4b-lora-drift-lite-v2   # v2: A100, all five fine-tuned versions in one run
 seed: 20261013
 workdir: runs
 
@@ -25,7 +25,7 @@ generation:
   temperature: 0.0
   max_tokens: 384                                    # LITE: shorter answers (a refusal or compliance shows early)
   concurrency: 16
-  batch_size: 4                                      # T4 without fused Mamba kernels: 16 runs out of memory
+  batch_size: 16                                     # A100; use 4 on a T4 (16 runs out of memory there)
 
 eval_sets:
   aegis_hf_id: nvidia/Aegis-AI-Content-Safety-Dataset-2.0
@@ -66,8 +66,8 @@ finetune:
     target_modules: [q_proj, k_proj, v_proj, o_proj, in_proj, out_proj, up_proj, down_proj]
   epochs: 2
   lr: 1.0e-4
-  per_device_batch: 1
-  grad_accum: 16
+  per_device_batch: 2                                # A100; use 1 (with grad_accum 16) on a T4
+  grad_accum: 8
   max_seq_len: 1024
   warmup_ratio: 0.03
 
