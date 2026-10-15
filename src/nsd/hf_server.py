@@ -7,6 +7,10 @@ exact same HTTP code path in the lite and full studies.
 """
 from __future__ import annotations
 
+import os
+
+os.environ.setdefault("PYTORCH_CUDA_ALLOC_CONF", "expandable_segments:True")  # less fragmentation on small GPUs
+
 import argparse
 import asyncio
 import time

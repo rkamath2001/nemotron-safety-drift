@@ -25,7 +25,7 @@ generation:
   temperature: 0.0
   max_tokens: 384                                    # LITE: shorter answers (a refusal or compliance shows early)
   concurrency: 16
-  batch_size: 16
+  batch_size: 4                                      # T4 without fused Mamba kernels: 16 runs out of memory
 
 eval_sets:
   aegis_hf_id: nvidia/Aegis-AI-Content-Safety-Dataset-2.0
@@ -66,8 +66,8 @@ finetune:
     target_modules: [q_proj, k_proj, v_proj, o_proj, in_proj, out_proj, up_proj, down_proj]
   epochs: 2
   lr: 1.0e-4
-  per_device_batch: 2
-  grad_accum: 8
+  per_device_batch: 1
+  grad_accum: 16
   max_seq_len: 1024
   warmup_ratio: 0.03
 
