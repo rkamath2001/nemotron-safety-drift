@@ -1,6 +1,6 @@
 # Fine-tuning Nemotron didn't break its safety. The safety fix had a side effect.
 
-*Rehearsing its own refusals made Nemotron turn down harmless requests too. A safety check that only counts harmful answers would have scored that as a win.*
+*Rehearsing its own refusals made Nemotron raise more false alarms, turning down harmless requests. A safety check that only counts harmful answers would have scored that as a win.*
 
 ---
 
