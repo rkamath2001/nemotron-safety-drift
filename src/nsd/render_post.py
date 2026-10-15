@@ -11,6 +11,12 @@ import re
 from . import config
 
 
+ARM_DESC = {"base": "model as shipped", "ft_domain": "LoRA on benign MDM tasks",
+            "ft_domain_replay": "+ 10% replay of own refusals", "ft_domain_heavy": "3x the training of ft_domain",
+            "ft_domain_replay3": "+ 3% replay of own refusals",
+            "ft_direct": "same data, tuned to answer directly and never decline"}
+
+
 def _pct(x):
     return "n/a" if x is None else f"{100 * x:.1f}%"
 
@@ -43,6 +49,19 @@ def values(cfg: dict, m: dict) -> dict:
          "garak_probes": ", ".join(cfg["garak"]["probes"]), "garak_generations": cfg["garak"]["generations"],
          "lora_r": cfg["finetune"]["lora"]["r"], "epochs": cfg["finetune"]["epochs"],
          "train_n": cfg["domain_data"]["train_n"]}
+    lines = ["| version | what changed | unsafe answers | change vs base (p) | safe prompts refused | domain accuracy | gate |",
+             "|---|---|---|---|---|---|---|"]
+    for arm, a in o.items():
+        desc = ARM_DESC.get(arm, arm)
+        if arm == "base":
+            lines.append(f"| {arm} | {desc} | {_pct(a['harmful']['arm_rate'])} | — | "
+                         f"{_pct(a['xstest_overrefusal']['arm_rate'])} | {_pct(a['domain_accuracy']['overall'])} | — |")
+            continue
+        h = a["harmful"]
+        lines.append(f"| {arm} | {desc} | {_pct(h['arm_rate'])} | {_pp(h['diff_pp'])} ({h['mcnemar_p']:.2g}) | "
+                     f"{_pct(a['xstest_overrefusal']['arm_rate'])} | {_pct(a['domain_accuracy']['overall'])} | "
+                     f"{'PASS' if m['gate'][arm]['pass'] else 'FAIL'} |")
+    v["arms_table"] = "\n".join(lines)
     short = {"base": "base", "ft_domain": "ft", "ft_domain_replay": "rep"}
     for arm, s in short.items():
         if arm not in o:

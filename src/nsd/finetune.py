@@ -18,8 +18,15 @@ def build_mix(cfg: dict, arm: str) -> list[dict]:
     p = config.paths(cfg)
     rng = random.Random(f"{cfg['seed']}-{arm}")
     domain = config.read_jsonl(p["data"] / "domain_train.jsonl")
-    frac = cfg["finetune"]["arms"][arm]["safety_replay_frac"]
-    rows = [{"id": r["id"], "source": "domain", "messages": r["messages"]} for r in domain]
+    arm_cfg = cfg["finetune"]["arms"][arm]
+    frac = arm_cfg.get("safety_replay_frac", 0.0)
+    sys_override = arm_cfg.get("system_prompt")  # e.g. the "answer directly, never decline" stressor
+    rows = []
+    for r in domain:
+        msgs = [dict(m) for m in r["messages"]]
+        if sys_override:
+            msgs = [{"role": "system", "content": sys_override}] + [m for m in msgs if m["role"] != "system"]
+        rows.append({"id": r["id"], "source": "domain", "messages": msgs})
     if frac > 0:
         judged = p["judged"] / "base" / "replay.jsonl"
         if not judged.exists():
@@ -67,7 +74,10 @@ def train(cfg: dict, arm: str, rows: list[dict]) -> None:
                               TrainingArguments, set_seed)
 
     p = config.paths(cfg)
-    ft, t = cfg["finetune"], cfg["target"]
+    t = cfg["target"]
+    # Per-arm overrides (epochs, lr, ...) on top of the shared fine-tune settings.
+    ft = {**cfg["finetune"], **{k: v for k, v in cfg["finetune"]["arms"][arm].items()
+                                if k in ("epochs", "lr", "per_device_batch", "grad_accum")}}
     set_seed(cfg["seed"])
     tok = AutoTokenizer.from_pretrained(t["hf_id"], trust_remote_code=False)
     if tok.pad_token is None:
@@ -126,7 +136,9 @@ def train(cfg: dict, arm: str, rows: list[dict]) -> None:
     import transformers
     versions = {"torch": torch.__version__, "transformers": transformers.__version__, "peft": peft.__version__}
     (out / "train_metrics.json").write_text(json.dumps({**result.metrics, "log_history": trainer.state.log_history,
-                                                        "lora_targets": targets, "versions": versions}, indent=2))
+                                                        "lora_targets": targets, "versions": versions,
+                                                        "effective": {k: ft[k] for k in ("epochs", "lr", "per_device_batch", "grad_accum")},
+                                                        "arm": cfg["finetune"]["arms"][arm]}, indent=2))
     print(f"[{arm}] adapter saved -> {out / 'adapter'}")
 
 

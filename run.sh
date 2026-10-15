@@ -41,8 +41,21 @@ s_finetune() {
     "$TRAIN_PY" -m nsd.merge --arm "$a"
   done
 }
+arm_evaluated() {  # responses for every set + garak summary already present
+  python - "$1" <<'PY'
+import sys, os
+from nsd import config
+cfg = config.load(); p = config.paths(cfg); a = sys.argv[1]
+ok = all((p["responses"]/a/f"{s}.jsonl").exists() and
+         len(config.read_jsonl(p["responses"]/a/f"{s}.jsonl")) >= len(config.read_jsonl(p["data"]/f))
+         for s, f in [("harmful","harmful.jsonl"),("xstest","xstest.jsonl"),("domain","domain_test.jsonl")])
+ok = ok and (os.environ.get("NSD_SKIP_GARAK") or (p["results"]/f"garak_{a}.json").exists())
+sys.exit(0 if ok else 1)
+PY
+}
 s_eval_arms() {
   for a in $ARMS; do
+    if arm_evaluated "$a"; then echo "skip eval $a (done)"; continue; fi
     bash scripts/serve.sh target "$RUN/models/$a/merged"
     python -m nsd.generate --arm "$a" --sets harmful xstest domain
     [[ -n "${NSD_SKIP_GARAK:-}" ]] || python -m nsd.garak_run --arm "$a"
@@ -51,7 +64,7 @@ s_eval_arms() {
 }
 s_judge_arms() {
   bash scripts/serve.sh guard
-  python -m nsd.judge --arms $ARMS --sets harmful xstest
+  python -m nsd.judge --arms $ARMS --sets harmful xstest --skip-done
   bash scripts/serve.sh stop
 }
 s_report() {
@@ -63,7 +76,8 @@ s_report() {
 STAGES=(data base judge_base finetune eval_arms judge_arms report)
 [[ $# -gt 0 ]] && STAGES=("$@")
 for s in "${STAGES[@]}"; do
-  if done_ "$s" && [[ $# -eq 0 ]]; then echo "skip $s (done)"; continue; fi
+  # One-shot stages are marked done; per-arm stages re-check each arm, so adding arms later just works.
+  if [[ " data base judge_base " == *" $s "* ]] && done_ "$s" && [[ $# -eq 0 ]]; then echo "skip $s (done)"; continue; fi
   stage "$s"; "s_$s"; mark "$s"
 done
 echo; echo "Results: $RUN/results/report.md"

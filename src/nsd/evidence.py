@@ -107,6 +107,7 @@ def build(cfg: dict, hash_merged: bool) -> list[Path]:
                 t = json.loads(tm.read_text())
                 weights["training"] = {"lora_targets": t.get("lora_targets"), "train_loss": t.get("train_loss"),
                                        "train_env_versions": t.get("versions"),
+                                       "arm_settings": t.get("arm"), "effective_hyperparameters": t.get("effective"),
                                        "hyperparameters": cfg["finetune"],
                                        "mix_sha256": inputs.get(f"train_{arm}.jsonl")}
             mg = p["models"] / arm / "merged"

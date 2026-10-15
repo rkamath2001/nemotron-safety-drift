@@ -48,6 +48,7 @@ async def _run(cfg, arm, set_name):
             fh.flush()
 
     await asyncio.gather(*(one(r) for r in todo))
+    await client.close()
     fh.close()
     print(f"[{arm}] {set_name}: {len(todo)} new, {len(done)} cached -> {out_path}")
 

@@ -111,7 +111,7 @@ def main():
     print(f"\nsmoke run finished in {time.time() - t0:.0f}s")
     for f in ["results/report.md", "results/metrics.json", "results/substack_post.md",
               "results/guard_calibration.json", "evidence/ft_domain/evidence.json",
-              "models/ft_domain/merged/config.json", "models/ft_domain_replay/adapter/adapter_config.json"]:
+              "models/ft_domain/merged/adapter_ref.json", "models/ft_domain_heavy/adapter/adapter_config.json", "models/ft_direct/adapter/adapter_config.json", "models/ft_domain_replay/adapter/adapter_config.json"]:
         assert (p["root"] / f).exists(), f"missing {f}"
     mix = config.read_jsonl(p["data"] / "train_ft_domain_replay.jsonl")
     print("replay rows in mitigation mix:", sum(r["source"] == "safety_replay" for r in mix))

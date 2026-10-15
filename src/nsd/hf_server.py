@@ -26,12 +26,25 @@ def _dtype():
 
 
 def load(model_id: str):
-    tok = AutoTokenizer.from_pretrained(model_id, trust_remote_code=False, padding_side="left")
+    """Load a model dir/HF id. A dir holding adapter_ref.json is a LoRA arm: base + adapter, merged in memory
+    (identical weights to an on-disk merge, without writing another full copy of the model)."""
+    import json
+    from pathlib import Path
+    ref = Path(model_id) / "adapter_ref.json"
+    base_id, adapter = model_id, None
+    if ref.exists():
+        r = json.loads(ref.read_text())
+        base_id, adapter = r["base_model"], r["adapter_dir"]
+    tok = AutoTokenizer.from_pretrained(base_id, trust_remote_code=False, padding_side="left")
     if tok.pad_token is None:
         tok.pad_token = tok.eos_token
     cuda = torch.cuda.is_available()
-    model = AutoModelForCausalLM.from_pretrained(model_id, torch_dtype=_dtype() if cuda else torch.float32,
+    model = AutoModelForCausalLM.from_pretrained(base_id, torch_dtype=_dtype() if cuda else torch.float32,
                                                  trust_remote_code=False, device_map="cuda" if cuda else "cpu")
+    if adapter:
+        from peft import PeftModel
+        model = PeftModel.from_pretrained(model, adapter).merge_and_unload()
+        print(f"merged adapter {adapter} into {base_id} in memory", flush=True)
     model.eval()
     return tok, model
 

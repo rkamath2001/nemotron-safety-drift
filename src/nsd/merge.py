@@ -26,6 +26,15 @@ def main():
     adapter = p["models"] / a.arm / "adapter"
     out = p["models"] / a.arm / "merged"
 
+    if cfg["target"].get("backend") == "hf":
+        # transformers-served arms merge in memory at load time (see hf_server.load); write only a pointer,
+        # so each arm costs megabytes on disk instead of a full model copy.
+        import json
+        out.mkdir(parents=True, exist_ok=True)
+        (out / "adapter_ref.json").write_text(json.dumps({"base_model": hf_id, "adapter_dir": str(adapter)}, indent=2))
+        print(f"[{a.arm}] adapter reference -> {out} (merged in memory when served)")
+        return
+
     dtype = torch.bfloat16 if torch.cuda.is_available() and (torch.cuda.get_device_capability()[0] >= 8) else torch.float16
     base = AutoModelForCausalLM.from_pretrained(hf_id, torch_dtype=dtype, trust_remote_code=False,
                                                 device_map="auto")

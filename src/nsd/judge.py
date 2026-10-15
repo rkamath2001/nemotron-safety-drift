@@ -135,6 +135,7 @@ async def calibrate(cfg) -> str:
             got.append({"query": q, "expected_unsafe": want, "got_unsafe": j["response_unsafe"]})
         report[mode] = got
         if all(x["got_unsafe"] == x["expected_unsafe"] for x in got):
+            await client.close()
             p = config.paths(cfg)
             (p["results"] / "guard_calibration.json").write_text(json.dumps({"chosen": mode, "checks": report}, indent=2))
             print(f"guard calibration passed using '{mode}' format")
@@ -155,6 +156,7 @@ async def _judge(cfg, arm, set_name, mode):
             return {**r, "guard_raw": raw, "guard_format": mode, **parse_guard(raw), "refusal": is_refusal(r["response"])}
 
     judged = await asyncio.gather(*(one(r) for r in rows))
+    await client.close()
     config.write_jsonl(out, judged)
     bad = sum(not j["parse_ok"] for j in judged)
     print(f"[{arm}] {set_name}: judged {len(judged)} ({bad} unparsed) -> {out}")
@@ -164,11 +166,17 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--arms", nargs="+", required=True)
     ap.add_argument("--sets", nargs="+", default=["harmful", "xstest"])
+    ap.add_argument("--skip-done", action="store_true", help="skip arm/set pairs already fully judged")
     a = ap.parse_args()
     cfg = config.load()
     mode = asyncio.run(calibrate(cfg))
+    p = config.paths(cfg)
     for arm in a.arms:
         for s in a.sets:
+            out, src = p["judged"] / arm / f"{s}.jsonl", p["responses"] / arm / f"{s}.jsonl"
+            if a.skip_done and out.exists() and len(config.read_jsonl(out)) == len(config.read_jsonl(src)):
+                print(f"[{arm}] {s}: already judged, skipping")
+                continue
             asyncio.run(_judge(cfg, arm, s, mode))
 
 

@@ -118,7 +118,8 @@ def charts(cfg: dict, m: dict) -> list[str]:
 
     p = config.paths(cfg)
     arms = list(m["arms"])
-    colors = {"base": "#6B6B6B", "ft_domain": "#C74634", "ft_domain_replay": "#0F8B7A"}
+    colors = {"base": "#6B6B6B", "ft_domain": "#C74634", "ft_domain_replay": "#0F8B7A", "ft_domain_heavy": "#8A2A1E",
+              "ft_domain_replay3": "#5FB3A6", "ft_direct": "#F5A623"}
     files = []
 
     def bars(ax, vals, cis, title, ylabel):
@@ -126,12 +127,12 @@ def charts(cfg: dict, m: dict) -> list[str]:
         ax.bar(xs, [100 * v for v in vals], color=[colors.get(a, "#1B5FA8") for a in arms],
                yerr=[[100 * (v - c[0]) for v, c in zip(vals, cis)], [100 * (c[1] - v) for v, c in zip(vals, cis)]],
                capsize=4)
-        ax.set_xticks(list(xs), arms, fontsize=9)
+        ax.set_xticks(list(xs), arms, fontsize=8 if len(arms) > 3 else 9, rotation=30 if len(arms) > 3 else 0, ha="right" if len(arms) > 3 else "center")
         ax.set_title(title, fontsize=10)
         ax.set_ylabel(ylabel)
         ax.spines[["top", "right"]].set_visible(False)
 
-    fig, axes = plt.subplots(1, 3, figsize=(12, 3.6))
+    fig, axes = plt.subplots(1, 3, figsize=(12 if len(arms) <= 3 else 14, 3.6 if len(arms) <= 3 else 4.2))
     o = m["arms"]
     bars(axes[0], [o[a]["harmful"]["arm_rate"] for a in arms], [o[a]["harmful"]["arm_ci"] for a in arms],
          "Harmful prompts answered unsafely\n(Aegis 2.0 test, guard-judged)", "% of prompts")
