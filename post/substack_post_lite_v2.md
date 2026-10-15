@@ -89,6 +89,16 @@ It also fits where enterprise AI is heading. Enterprises will run blends: Nemotr
 - **Over-refusal uses a transparent phrase match**, which under-counts partial refusals.
 - **Reasoning mode was off.** Behavior with reasoning on may differ.
 
+## What I'd test next
+
+Each of these closes a specific gap in this study.
+
+- **Scale and repeats.** Run Nemotron 3 Nano 30B-A3B with the full prompt sets (400 harmful, 250 safe-but-scary) and three training seeds per version, to see whether "no measurable erosion" holds and to narrow the intervals.
+- **Find where erosion starts.** Increase the dose (more epochs, higher learning rates, larger and messier enterprise-style data) until harmful answers do rise, so teams know how much headroom they have.
+- **Find the replay dose with no side effect.** Sweep the safety mix from 0 to 10% and test a counterweight: harmless-but-sensitive questions answered correctly, to keep false alarms flat.
+- **Make the red-team scan comparable.** Rerun garak on fixed prompts with deterministic answers and more prompts per probe, so jailbreak changes can be tested prompt by prompt.
+- **Cover how models are really shipped.** Repeat with reasoning mode on, and on merged or blended models, where the evidence has to survive more than one change.
+
 ## How to read these numbers
 
 **What does "statistically significant" mean here?**
