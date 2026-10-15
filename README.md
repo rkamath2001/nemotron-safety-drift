@@ -89,6 +89,13 @@ The 4B results describe the 4B. Re-running on the 30B is `./run.sh` with the def
 
 ### Evidence package (`nsd-evidence/0.1`)
 
+The six packages from the 4B run are in [`results/lite-v2/evidence/`](results/lite-v2/evidence/), one folder per version. Check that none has been altered:
+
+```bash
+cd results/lite-v2/evidence && for d in */; do (cd "$d" && sha256sum -c evidence.sha256); done
+```
+
+
 One JSON per arm, content-hashed:
 - **weights**: base model ID and HF revision, LoRA adapter digest, merged-shard digest, training hyperparameters, training-mix hash, training-env versions
 - **inputs**: SHA-256 of every prompt set, the training mix and `study.yaml`
