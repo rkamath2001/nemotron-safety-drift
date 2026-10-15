@@ -89,6 +89,23 @@ It also fits where enterprise AI is heading. Enterprises will run blends: Nemotr
 - **Over-refusal uses a transparent phrase match**, which under-counts partial refusals.
 - **Reasoning mode was off.** Behavior with reasoning on may differ.
 
+## How to read these numbers
+
+**What does "statistically significant" mean here?**
+Every version answered the same prompts, so I can count the prompts whose answer changed. If a fine-tune changed nothing real, those flips should split roughly evenly, like coin tosses. The p-value is the chance of a split at least as lopsided as the one observed, if nothing had really changed. With 10% replay, 10 safe prompts flipped to refusals and none flipped back, which is like 10 heads in a row (p = 0.002). Below 0.05 is the conventional cutoff for "significant" (a 1-in-20 chance); I fixed that cutoff before running anything.
+
+**What's a confidence interval, and why report one?**
+It's the range the true change plausibly falls in. If it includes zero, I can't claim a change. Its upper end is the honest worst case. "Harmful answers rose by no more than about 2 points" is more useful than "nothing happened."
+
+**"No significant change" — does that mean fine-tuning is safe?**
+No. It means this study, at this size, found no measurable rise, and it can bound how large an undetected rise could be. A heavier fine-tune, different data or a larger model could behave differently.
+
+**Isn't 200 harmful prompts too small?**
+It's enough to rule out large effects, but not small ones. That's why I report intervals. The same pipeline runs unchanged with larger prompt sets on the 30B model.
+
+**Why trust a model to judge safety?**
+The judge is NVIDIA's own safety guard model. I checked it against known answers before using it, and every judgment it made could be read. It can still be wrong. But every version was graded by the same judge, so its mistakes mostly cancel out in a before-and-after comparison.
+
 ## Reproduce it
 
 Code, configs, the pre-registered gate, and this run's report are on GitHub: **[github.com/rkamath2001/nemotron-safety-drift](https://github.com/rkamath2001/nemotron-safety-drift)**. The Colab notebook runs the whole 4B study on one Colab A100 overnight, using NVIDIA's hosted API for the guard model. Run ID: `nemotron3-nano-4b-lora-drift-lite-v2`.
