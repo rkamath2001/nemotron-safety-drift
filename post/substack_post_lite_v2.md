@@ -1,6 +1,6 @@
 # Fine-tuning Nemotron didn't break its safety. The safety fix had a side effect.
 
-*A small, reproducible study of what happens to an open model's safety when an enterprise fine-tunes it, and why the evidence has to travel with the weights.*
+*Rehearsing its own refusals made Nemotron turn down harmless requests too. A safety check that only counts harmful answers would have scored that as a win.*
 
 ---
 
