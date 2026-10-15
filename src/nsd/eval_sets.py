@@ -15,6 +15,8 @@ from collections import defaultdict
 
 from . import config
 
+XSTEST_URL = "https://raw.githubusercontent.com/paul-rottger/xstest/main/xstest_prompts.csv"
+
 
 def _stratified(rows, n, rng, key):
     buckets = defaultdict(list)
@@ -57,7 +59,12 @@ def main():
     replay = _stratified(pool, es["replay_pool_n"], rng, key=lambda r: r["category"])
     config.write_jsonl(p["data"] / "replay_pool.jsonl", [{**r, "set": "replay"} for r in replay])
 
-    with open(config.REPO / es["xstest_path"]) as f:
+    xs_path = config.REPO / es["xstest_path"]
+    if not xs_path.exists():  # slim copies of the repo omit the vendored CSV; fetch the same file from its source
+        import urllib.request
+        xs_path.parent.mkdir(parents=True, exist_ok=True)
+        urllib.request.urlretrieve(XSTEST_URL, xs_path)
+    with open(xs_path) as f:
         xs = [{"id": f"xstest-{r['id']}", "prompt": r["prompt"], "category": r["type"], "label": r["label"],
                "set": "xstest"} for r in csv.DictReader(f)]
     # Optional subsampling for the lite study; default keeps all 450.
