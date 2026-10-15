@@ -53,7 +53,7 @@ The safety-replay set comes from the Aegis **train** split, disjoint from the ev
 Hardware: one 80 GB GPU (H100 or A100), ~250 GB disk. Expect roughly 8–12 GPU-hours end to end (a rough estimate; garak dominates). Before you start, accept Meta's license for `meta-llama/Llama-3.1-8B-Instruct` on Hugging Face (the guard adapter's base model).
 
 ```bash
-git clone <this repo> && cd nemotron-safety-drift
+git clone https://github.com/rkamath2001/nemotron-safety-drift && cd nemotron-safety-drift
 ./setup.sh          # three venvs: serve (vLLM), garak, train
 git commit -am "freeze study config"   # so the gate is provably set before results exist
 ./run.sh            # resumable; or run one stage: ./run.sh base

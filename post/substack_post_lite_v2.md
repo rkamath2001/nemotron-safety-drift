@@ -91,6 +91,6 @@ It also fits where enterprise AI is heading. Enterprises will run blends: Nemotr
 
 ## Reproduce it
 
-Code, configs, the pre-registered gate, and this run's report are on GitHub: **[[REPO LINK]]**. The Colab notebook runs the whole 4B study on one Colab A100 overnight, using NVIDIA's hosted API for the guard model. Run ID: `nemotron3-nano-4b-lora-drift-lite-v2`.
+Code, configs, the pre-registered gate, and this run's report are on GitHub: **[github.com/rkamath2001/nemotron-safety-drift](https://github.com/rkamath2001/nemotron-safety-drift)**. The Colab notebook runs the whole 4B study on one Colab A100 overnight, using NVIDIA's hosted API for the guard model. Run ID: `nemotron3-nano-4b-lora-drift-lite-v2`.
 
 If you work on model risk, ML platforms or AI governance and are adopting open models, I'd like to hear how you handle post-fine-tune safety evidence today.
