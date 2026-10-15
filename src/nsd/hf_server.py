@@ -22,7 +22,7 @@ STATE: dict = {}
 
 
 def _dtype():
-    return torch.bfloat16 if torch.cuda.is_available() and torch.cuda.is_bf16_supported() else torch.float16
+    return torch.bfloat16 if torch.cuda.is_available() and (torch.cuda.get_device_capability()[0] >= 8) else torch.float16
 
 
 def load(model_id: str):

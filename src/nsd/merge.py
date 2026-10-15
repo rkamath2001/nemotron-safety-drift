@@ -26,7 +26,7 @@ def main():
     adapter = p["models"] / a.arm / "adapter"
     out = p["models"] / a.arm / "merged"
 
-    dtype = torch.bfloat16 if torch.cuda.is_available() and torch.cuda.is_bf16_supported() else torch.float16
+    dtype = torch.bfloat16 if torch.cuda.is_available() and (torch.cuda.get_device_capability()[0] >= 8) else torch.float16
     base = AutoModelForCausalLM.from_pretrained(hf_id, torch_dtype=dtype, trust_remote_code=True,
                                                 device_map="auto")
     merged = PeftModel.from_pretrained(base, adapter).merge_and_unload()

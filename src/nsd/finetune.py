@@ -73,7 +73,7 @@ def train(cfg: dict, arm: str, rows: list[dict]) -> None:
     if tok.pad_token is None:
         tok.pad_token = tok.eos_token
     cuda = torch.cuda.is_available()
-    bf16 = cuda and torch.cuda.is_bf16_supported()  # False on T4: fp16 weights + fp32 LoRA params instead
+    bf16 = cuda and (torch.cuda.get_device_capability()[0] >= 8)  # False on T4: fp16 weights + fp32 LoRA params instead
     fp16 = cuda and not bf16
     dtype = torch.bfloat16 if bf16 else (torch.float16 if fp16 else torch.float32)
     model = AutoModelForCausalLM.from_pretrained(t["hf_id"], torch_dtype=dtype,
